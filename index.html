@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        html {
+            /* min-width: 100%; */
+            min-height: 100%;
+            background: linear-gradient(
+                    135deg, rgba(255, 67, 233, 1) 0%, rgba(0, 255, 222, 1) 100%
+                );
+            background-color: black;
+            background-repeat:no-repeat;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+        body {
+            margin: 0;
+        }
+        img, canvas {
+            border: 1px solid white;
+        }
+        .form {
+            margin: 25px;
+        }
+        .container {
+            display: flex;
+        }
+        .container > div {
+            margin: 10px 35px;
+        }
+        button {
+            background-color: #acb6e5;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            color: #334d50;
+            margin: 4px 2px;
+            padding: 15px 20px;
+            text-align: center;
+            text-decoration: none;
+            transition: all .5s ease;
+            cursor: pointer;
+        }
+        .btns-container {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .btns-container > button:hover {
+            background-color: #dbdfe6;
+            color: black;
+        }
+        .download-container {
+            display: flex;
+            justify-content: center;
+        }
+        #download {
+            background-color: white;
+        }
+        .none {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- <form action="/action_page.php">
+        <label for="img">Select image:</label>
+        <input type="file" id="img" name="img" accept="image/*">
+        <input type="submit">
+    </form> -->
+    <div class="form">
+        <input id="inputImg" type="file" accept="image/*">
+    </div>
+    <div class="container none">
+        <div>
+            <div>Uploaded image:</div>
+            <img id="upload"></img>
+        </div>
+        <div>
+            <div>Preview result image:</div>
+            <canvas id="canvas" width="0" height="0"></canvas>
+        </div>
+
+        <div class="btns-container none">
+            <button class="fixed-color-btn" color-id="white">White</button>
+            <button class="fixed-color-btn" color-id="#309eee">Light Blue</button>
+            <button class="fixed-color-btn" color-id="rgba(0,0,0,0)">Transparent</button>
+            <button class="custom-color-btn">Custom Color</button>
+            <button class="mirror-btn">Mirror</button>
+        </div>
+    </div>
+    <div class="download-container none">
+        <button id="download">Download result image</button>
+    </div>
+
+    <script defer>
+        let flipped = false;
+
+        document.getElementById("inputImg").addEventListener("change", function(event) {
+            uploadFileToImg(event.target.files[0])
+                .then(() => {
+                    scaleImage();
+                    drawImgToCanvas();
+                    showButtons();
+                })
+                .catch(error => { throw error; });
+        });
+
+        const elements = document.querySelectorAll(".fixed-color-btn");
+        Array.from(elements).forEach(function(element) {
+            const color = element.getAttribute('color-id');
+            element.addEventListener('click', () => {
+                drawImgToCanvas();
+                changeImageBg(color);
+            });
+        });
+
+        document.querySelector(".mirror-btn").addEventListener('click', () => {
+            mirrorImage();
+        });
+
+        document.getElementById("download").addEventListener("click", function(event) {
+            downloadResImage();
+        });
+
+        document.addEventListener("DOMContentLoaded", function(event) {
+            // Your code to run since DOM is loaded and ready
+        });
+
+        function uploadFileToImg(file) {
+            return new Promise((resolve) => {
+                const upload = document.getElementById('upload');
+                upload.src = URL.createObjectURL(file);
+                upload.onload = function() {
+                    // Free memory
+                    URL.revokeObjectURL(upload.src);
+                    resolve(true);
+                }
+            });
+        }
+
+        function isMobile() {
+            return /Android|mobile|iPad|iPhone/i.test(navigator.userAgent);
+        }
+
+        // TODO scale image to fit in window
+        function scaleImage() {
+            const img = document.getElementById('upload');
+            // Check if image is loaded completely
+            if (img.complete) {
+                console.info('donne budd');
+            }
+        }
+
+        function drawImgToCanvas() {
+            // const canvas = document.createElement('canvas');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            const img = document.getElementById('upload');
+
+            canvas.width = img.width;
+            canvas.height = img.height;
+            if (flipped) context.setTransform(-1, 0, 0, 1, canvas.width, 0);
+            context.drawImage(img, 0, 0);
+        }
+
+        function showButtons() {
+            const elems = document.querySelectorAll(".none");
+            [].forEach.call(elems, function(element) {
+                element.classList.remove("none");
+            });
+        }
+
+        function mirrorImage() {
+            const canvas = document.getElementById('canvas');
+
+            /* `toDataUrl` method (sync) */
+            // const img = new Image();
+            // img.src = canvas.toDataURL();
+            // img.onload = function(){
+            //     const context = canvas.getContext('2d');
+            //     context.clearRect(0, 0, canvas.width, canvas.height);
+            //     context.setTransform(-1, 0, 0, 1, canvas.width, 0);
+            //     context.drawImage(img, 0, 0);
+            //     flipped = !flipped;
+            // }
+
+            /* `toBlob` method (async) */
+            canvas.toBlob((blob) => {
+                const img = new Image();
+                img.src = URL.createObjectURL(blob);
+                img.onload = () => {
+                    // No longer need to read the blob so it's revoked
+                    URL.revokeObjectURL(img.src);
+                    const context = canvas.getContext('2d');
+                    context.clearRect(0, 0, canvas.width, canvas.height);
+                    context.setTransform(-1, 0, 0, 1, canvas.width, 0);
+                    context.drawImage(img, 0, 0);
+                    flipped = !flipped;
+                }
+            });
+        }
+
+        function drawFinalImage() {
+	// https://stackoverflow.com/questions/17025603/what-is-the-best-practice-to-export-canvas-with-high-quality-images
+            // Width : 10 cm * 300 / 2.54 = 1181 pixels
+            // Height: 15 cm * 300 / 2.54 = 1772 pixels
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = img.width; // NEW WIDTH PIXEL
+            canvas.height = img.height; // NEW HEIGHT PIXEL
+            context.drawImage(img, 0, 0);
+        }
+
+        function downloadResImage() {
+            // Get image URI from canvas object
+            const canvas = document.getElementById('canvas');
+            const imageUrl = canvas.toDataURL('image/png', 1.0);
+
+            // Create link to download
+            const link = document.createElement('a');
+            link.download = 'result_img.png';
+            link.href = imageUrl;
+            link.click();
+        }
+
+        function changeImageBg(backgroundColor, restore = false) {
+            var context = document.getElementById('canvas').getContext('2d');
+
+            canvas = context.canvas;
+            // Cache height and width        
+            var w = canvas.width;
+            var h = canvas.height;
+
+            // Get current ImageData from canvas
+            const imageData = context.getImageData(0, 0, w, h);
+
+            // Store the current globalCompositeOperation
+            var compositeOperation = context.globalCompositeOperation;
+
+            // Set to draw behind current content
+            context.globalCompositeOperation = "destination-over";
+
+            // Set background color
+            context.fillStyle = backgroundColor;
+
+            // Draw background / rect on entire canvas
+            context.fillRect(0, 0, w, h);
+
+            // Get new image data & url from canvas
+            const newImageData = context.getImageData(0, 0, w, h);
+            const imageUrl = canvas.toDataURL("image/png", 1.0);
+
+            // Reset the globalCompositeOperation to what it was
+            context.globalCompositeOperation = compositeOperation;
+
+            if (restore) {
+                // Clear the canvas
+                context.clearRect(0, 0, w, h);
+
+                // Restore it with original / cached ImageData
+                context.putImageData(imageData, 0, 0);
+            }
+
+            // Return the Base64 encoded data url string
+            return [newImageData, imageUrl];
+        }
+    </script>
+</body>
+</html>
