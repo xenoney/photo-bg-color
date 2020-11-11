@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-	<title>Pick a background color!</title>
+    <title>Pick a background color!</title>
     <style>
         html {
             /* min-width: 100%; */
@@ -112,15 +112,21 @@
         Array.from(elements).forEach(function(element) {
             const color = element.getAttribute('color-id');
             element.addEventListener('click', () => {
-                drawImgToCanvas();
-                changeImageBg(color);
+                /* Method 1 */
+                drawImgToCanvas(color);
+
+                // or
+
+                /* Method 2 */
+                // drawImgToCanvas();
+                // fillImgBackground(color);
             });
         });
 
         document.querySelector(".custom-color-btn").addEventListener('click', () => {
             alert('Not implemented yet');
             // const color = document.getElementById('custom-color-field').getAttribute('value');
-            // changeImageBg(color);
+            // fillImgBackground(color);
         });
 
         document.querySelector(".mirror-btn").addEventListener('click', () => {
@@ -160,7 +166,7 @@
             }
         }
 
-        function drawImgToCanvas() {
+        function drawImgToCanvas(backgroundColor) {
             // const canvas = document.createElement('canvas');
             const canvas = document.getElementById('canvas');
             const context = canvas.getContext('2d');
@@ -168,6 +174,12 @@
 
             canvas.width = img.width;
             canvas.height = img.height;
+
+            if (backgroundColor) {
+                context.fillStyle = backgroundColor;
+                context.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
             if (flipX) context.setTransform(-1, 0, 0, 1, canvas.width, 0);
             context.drawImage(img, 0, 0);
         }
@@ -234,8 +246,13 @@
             link.click();
         }
 
-        /* Modified from https://stackoverflow.com/a/44174406 */
-        function changeImageBg(backgroundColor, restore = false) {
+        /* Modified from `https://stackoverflow.com/a/44174406`. */
+        // Draw image first, then fill background color by using composite operation.
+        function fillImgBackground(backgroundColor, restore = false) {
+            if (!backgroundColor) {
+                return;
+            }
+
             const context = document.getElementById('canvas').getContext('2d');
             const canvas = context.canvas;
 
@@ -273,7 +290,7 @@
                 context.putImageData(imageData, 0, 0);
             }
 
-            // Return the Base64 encoded data url string
+            // Return new ImageData and Base64 encoded data url string
             return [newImageData, imageUrl];
         }
     </script>
